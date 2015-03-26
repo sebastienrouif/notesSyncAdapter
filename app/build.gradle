@@ -1,0 +1,103 @@
+apply plugin: 'com.android.application'
+
+dependencies {
+    compile 'com.android.support:support-v4:21.0.3'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.squareup.retrofit:retrofit:1.9.0'
+    compile 'com.squareup.okhttp:okhttp:2.2.0'
+    compile 'com.squareup.okhttp:okhttp-urlconnection:2.2.0'
+    compile 'com.squareup.okio:okio:1.2.0'
+    compile 'com.google.code.gson:gson:2.3.1'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:1.9.5'
+}
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion "21.1.2"
+
+    // Set versionCode and versionName based off Jenkins build number
+    def suffix = System.getenv("BUILD_NUMBER")
+    def branch = System.getenv("GIT_BRANCH")
+
+    defaultConfig {
+        applicationId "com.monitisecreate.myapp"
+        minSdkVersion 16
+        targetSdkVersion 21
+        versionCode 1
+        versionName "1.0.0"
+
+        if (suffix != null) {
+            def vers = Integer.parseInt(suffix)
+            versionCode vers
+        }
+    }
+
+    signingConfigs {
+        debug {
+            // Having a shared debug keystore means that the app only needs to be configured for
+            // APIs like Google Maps, Facebook etc with one key hash
+            storeFile rootProject.file("config/signing/debug.keystore")
+        }
+
+        release {
+            // IMPORTANT: Remember to create your own keystore or use the client's one before release!
+            storeFile rootProject.file("config/signing/release.keystore")
+            storePassword 'skeleton'
+            keyAlias 'skeleton'
+            keyPassword 'skeleton'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                    // Project-specific Proguard file
+                    rootProject.file('config/proguard/proguard-rules.pro'),
+                    // Proguard for commonly-used libraries (see config/proguard/libraries for more)
+                    // Derived from: https://github.com/krschultz/android-proguard-snippets
+                    rootProject.file('config/proguard/libraries/proguard-gson.pro'),
+                    rootProject.file('config/proguard/libraries/proguard-square-retrofit.pro')
+        }
+    }
+
+    productFlavors {
+        live {
+        }
+
+        staging {
+            // You can have a different package name for a staging build, so both flavors can be
+            // installed side-by-side.
+            // You will need to substitute the package name for ${applicationId} in
+            // AndroidManifest.xml for Content Providers etc.
+            applicationId "com.monitisecreate.myapp.staging"
+        }
+    }
+
+    // Append the branch name for sprint and development to the versionName to easily
+    // identify in Hockey
+    applicationVariants.all { variant ->
+        // Don't append the branch name for any builds off master
+        if (branch != null && !branch.equalsIgnoreCase("origin/master")) {
+            variant.mergedFlavor.versionName = android.defaultConfig.versionName + "." + suffix + branch.replace("origin/", "-") + "-" + variant.flavorName
+        } else {
+            if (suffix != null) {
+                variant.mergedFlavor.versionName = android.defaultConfig.versionName + "." + suffix
+            }
+        }
+    }
+
+    apply from: rootProject.file('config/checkstyle/checkstyle.gradle')
+    apply from: rootProject.file('config/findbugs/findbugs.gradle')
+
+    lintOptions {
+        abortOnError false
+    }
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Example exclude file for findbugs -->
+    <Match>
+        <Class name="~.*\.R\$.*"/>
+        <Bug code="Nm"/>
+    </Match>
+    <!--Match>
+        <Package name="~.*com.monitisecreate.myapp.example.*"/>
+    </Match-->
+</FindBugsFilter>

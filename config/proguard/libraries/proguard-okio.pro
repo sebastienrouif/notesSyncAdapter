@@ -1,0 +1,3 @@
+# Okio
+
+-dontwarn okio.**

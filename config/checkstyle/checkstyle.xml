@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Puppy Crawl//DTD Check Configuration 1.2//EN" "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
+<module name="Checker">
+
+    <property name="severity" value="error"></property>
+
+    <module name="SuppressionFilter">
+        <property name="file" value="config/checkstyle/suppressions.xml"/>
+    </module>
+
+    <module name="TreeWalker">
+
+
+        <module name="JavadocType">
+            <property name="severity" value="warning"/>
+        </module>
+
+        <module name="JavadocStyle"></module>
+        <module name="ConstantName"></module>
+        <module name="LocalFinalVariableName"></module>
+        <module name="LocalVariableName"></module>
+        <module name="MethodName"></module>
+        <module name="PackageName"></module>
+        <module name="ParameterName"></module>
+
+        <module name="StaticVariableName">
+            <metadata name="net.sf.eclipsecs.core.comment" value="starts with 's'"></metadata>
+            <property name="format" value="^[s][a-zA-Z0-9]*$"></property>
+        </module>
+
+        <module name="TypeName"></module>
+
+        <module name="MemberName">
+            <property name="format" value="^m[a-zA-Z0-9]*$"/>
+            <property name="applyToProtected" value="false"></property>
+            <property name="applyToPrivate" value="true"></property>
+            <property name="applyToPublic" value="false"></property>
+        </module>
+
+        <module name="UpperEll"></module>
+        <module name="AvoidStarImport"></module>
+        <module name="IllegalImport"></module>
+        <module name="RedundantImport"></module>
+        <module name="UnusedImports"></module>
+
+        <module name="MethodLength">
+            <property name="max" value="800"/>
+        </module>
+        <module name="ParameterNumber">
+            <property name="id" value="maxParameterNumber"/>
+            <property name="max" value="25"/>
+            <property name="tokens" value="METHOD_DEF"/>
+        </module>
+
+        <module name="EmptyForIteratorPad"></module>
+        <module name="MethodParamPad"></module>
+
+        <module name="NoWhitespaceAfter">
+            <property name="tokens" value="BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS"></property>
+        </module>
+
+        <module name="NoWhitespaceBefore"></module>
+        <module name="ParenPad"></module>
+        <module name="TypecastParenPad"></module>
+        <module name="WhitespaceAfter"></module>
+        <module name="WhitespaceAround"></module>
+        <module name="ModifierOrder"></module>
+        <module name="RedundantModifier"></module>
+        <module name="AvoidNestedBlocks"></module>
+        <module name="EmptyBlock"></module>
+        <module name="LeftCurly"></module>
+        <module name="NeedBraces"></module>
+        <module name="RightCurly"></module>
+        <module name="EmptyStatement"></module>
+        <module name="DeclarationOrder"></module>
+
+        <module name="HiddenField">
+            <property name="ignoreConstructorParameter" value="true"></property>
+        </module>
+
+        <module name="IllegalInstantiation"></module>
+        <module name="MissingSwitchDefault"></module>
+
+        <module name="RedundantThrows">
+            <property name="logLoadErrors" value="true"></property>
+            <property name="suppressLoadErrors" value="true"></property>
+        </module>
+
+        <module name="SimplifyBooleanExpression"></module>
+        <module name="SimplifyBooleanReturn"></module>
+        <module name="InterfaceIsType"></module>
+
+        <module name="VisibilityModifier">
+            <property name="protectedAllowed" value="true"/>
+            <property name="publicMemberPattern" value=""/>
+        </module>
+
+        <module name="ArrayTypeStyle"></module>
+
+        <module name="RegexpSinglelineJava">
+            <property name="format" value="// TODO Auto-generated method stub"/>
+        </module>
+
+        <module name="RegexpSinglelineJava">
+            <property name="format" value="ex\.printStacktrace()"/>
+            <property name="severity" value="warning"/>
+        </module>
+    </module>
+
+</module>
