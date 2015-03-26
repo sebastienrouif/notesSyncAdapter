@@ -2,5 +2,7 @@
 <resources>
     <string name="app_name">Notes</string>
     <string name="action_settings">Settings</string>
+    <string name="title_note_list">Notes</string>
+    <string name="title_note_detail">Note Detail</string>
 
 </resources>

@@ -6,6 +6,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import org.rouif.notes.R;
+import org.rouif.notes.sync.SyncUtils;
 
 
 public class MainActivity extends Activity {
@@ -14,6 +15,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+         SyncUtils.createSyncAccount(this);
     }
 
     @Override
@@ -29,9 +31,12 @@ public class MainActivity extends Activity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                SyncUtils.requestManualSync(this);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
     }
 }

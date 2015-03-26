@@ -1,0 +1,38 @@
+{
+    "fields": [
+        {
+            "name": "server_id",
+            "type": "Long",
+        },
+        {
+            "name": "title",
+            "type": "String",
+        },
+        {
+            "name": "content",
+            "type": "String",
+        },
+        {
+            "name": "last_update",
+            "type": "Date",
+        },
+        {
+            "name": "sync_status",
+            "type": "enum",
+            "enumName": "SyncStatus",
+            "enumValues": [
+                "TO_DELETE",
+                "TO_SYNC",
+                "SYNCED",
+            ],
+            "nullable": false,
+        },
+    ],
+
+    "constraints": [
+        {
+            "name": "unique_server_id",
+            "definition": "UNIQUE (server_id) ON CONFLICT REPLACE"
+        },
+    ]
+}

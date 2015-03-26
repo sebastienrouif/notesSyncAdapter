@@ -1,0 +1,13 @@
+{
+    "syntaxVersion": "3",
+    "projectPackageId": "org.rouif.notes",
+    "authority": "org.rouif.notes.provider",
+    "providerJavaPackage": "org.rouif.notes.provider",
+    "providerClassName": "NotesContentProvider",
+    "sqliteOpenHelperClassName": "NotesSQLiteOpenHelper",
+    "sqliteOpenHelperCallbacksClassName": "NotesSQLiteOpenHelperCallbacks",
+    "databaseFileName": "notes.db",
+    "databaseVersion": 1,
+    "enableForeignKeys": true,
+    "useAnnotations": true,
+}

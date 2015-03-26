@@ -4,8 +4,16 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- syncAdapter persmissions -->
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+    <uses-permission android:name="android.permission.READ_SYNC_STATS" />
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
-        android:name=".ExampleApplication"
+        android:name=".NoteApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
@@ -13,11 +21,63 @@
         <activity
             android:name=".activity.MainActivity"
             android:label="@string/app_name" >
+
+        </activity>
+
+        <!-- Content provider -->
+        <provider
+            android:name=".provider.NotesContentProvider"
+            android:authorities="@string/content_provider_authority"
+            android:exported="false"
+            android:syncable="true" />
+
+        <!-- Authenticator -->
+        <service android:name=".authenticator.AuthenticatorService" >
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator" />
+        </service>
+
+        <!-- SyncAdapter -->
+        <service
+            android:name=".sync.SyncService"
+            android:exported="true"
+            android:process=":sync" >
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/syncadapter" />
+        </service>
+
+        <!--
+     a simple receiver that triggers a sync for any message it receives. used by our
+     GCM implementation
+        -->
+        <receiver android:name=".sync.TriggerSyncReceiver" />
+
+        <activity
+            android:name=".activity.NoteListActivity"
+            android:label="@string/title_note_list" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".activity.NoteDetailActivity"
+            android:label="@string/title_note_detail"
+            android:parentActivityName=".activity.NoteListActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.rouif.notes.activity.NoteListActivity" />
         </activity>
     </application>
 

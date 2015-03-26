@@ -3,6 +3,7 @@
 /build/
 /app/build/
 /backend/build/
+/contentProvideGenrator/output/
 
 # Android Studio/IntelliJ project files
 /.idea/

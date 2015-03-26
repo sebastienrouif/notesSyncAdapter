@@ -5,13 +5,8 @@ dependencies {
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.9.5'
-    compile 'com.android.support:support-v4:22.0.0'
-    compile 'com.squareup.retrofit:retrofit:1.9.0'
-    compile 'com.squareup.okhttp:okhttp:2.2.0'
-    compile 'com.squareup.okhttp:okhttp-urlconnection:2.2.0'
-    compile 'com.squareup.okio:okio:1.2.0'
-    compile 'com.google.code.gson:gson:2.3.1'
     compile project(path: ':backend', configuration: 'android-endpoints')
+    compile 'com.android.support:support-v4:22.0.0'
 }
 
 android {
@@ -23,9 +18,9 @@ android {
     def branch = System.getenv("GIT_BRANCH")
 
     defaultConfig {
-        applicationId "com.monitisecreate.myapp"
+        applicationId "org.rouif.note"
         minSdkVersion 16
-        targetSdkVersion 21
+        targetSdkVersion 22
         versionCode 1
         versionName "1.0.0"
 
@@ -61,11 +56,9 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'),
                     // Project-specific Proguard file
-                    rootProject.file('config/proguard/proguard-rules.pro'),
-                    // Proguard for commonly-used libraries (see config/proguard/libraries for more)
-                    // Derived from: https://github.com/krschultz/android-proguard-snippets
-                    rootProject.file('config/proguard/libraries/proguard-gson.pro'),
-                    rootProject.file('config/proguard/libraries/proguard-square-retrofit.pro')
+                    rootProject.file('config/proguard/proguard-rules.pro')
+            // Proguard for commonly-used libraries (see config/proguard/libraries for more)
+            // Derived from: https://github.com/krschultz/android-proguard-snippets
         }
     }
 
@@ -78,7 +71,7 @@ android {
             // installed side-by-side.
             // You will need to substitute the package name for ${applicationId} in
             // AndroidManifest.xml for Content Providers etc.
-            applicationId "com.monitisecreate.myapp.staging"
+            applicationId "org.rouif.note.staging"
         }
     }
 
@@ -95,7 +88,7 @@ android {
         }
     }
 
-    apply from: rootProject.file('config/checkstyle/checkstyle.gradle')
+    //apply from: rootProject.file('config/checkstyle/checkstyle.gradle')
     apply from: rootProject.file('config/findbugs/findbugs.gradle')
 
     lintOptions {
