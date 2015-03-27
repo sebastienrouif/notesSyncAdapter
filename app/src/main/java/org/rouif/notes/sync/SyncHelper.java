@@ -18,24 +18,32 @@ package org.rouif.notes.sync;
 
 import android.accounts.Account;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SyncResult;
 import android.net.ConnectivityManager;
+import android.net.Uri;
 import android.os.Bundle;
 
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
 import com.google.api.client.googleapis.services.GoogleClientRequestInitializer;
+import com.google.api.client.util.DateTime;
 
 import org.rouif.notes.backend.model.noteApi.NoteApi;
 import org.rouif.notes.backend.model.noteApi.model.CollectionResponseNote;
 import org.rouif.notes.backend.model.noteApi.model.Note;
+import org.rouif.notes.provider.note.NoteContentValues;
+import org.rouif.notes.provider.note.NoteCursor;
+import org.rouif.notes.provider.note.NoteSelection;
+import org.rouif.notes.provider.note.SyncStatus;
 import org.rouif.notes.utils.AccountUtils;
 import org.rouif.notes.utils.LogUtils;
 import org.rouif.notes.utils.SharedPreferenceUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -113,10 +121,10 @@ public class SyncHelper {
             try {
                 switch (op) {
                     case OP_NOTE_PULL_SYNC:
-                        dataChanged |= doFavoritePullSync(mContext);
+                        dataChanged |= doNotePullSync(mContext);
                         break;
                     case OP_NOTE_PUSH_SYNC:
-                        dataChanged |= doFavoritePushSync(mContext);
+                        dataChanged |= doNotePushSync(mContext);
                         break;
                     default:
                         break;
@@ -193,43 +201,121 @@ public class SyncHelper {
      * @return Whether or not data was changed.
      * @throws IOException if there is a problem uploading the data.
      */
-    private boolean doFavoritePullSync(Context context) throws IOException {
+    private boolean doNotePullSync(Context context) throws IOException {
         if (!isOnline()) {
-            LogUtils.logd(TAG, "Not attempting doFavoritePullSync because device is OFFLINE");
+            LogUtils.logd(TAG, "Not attempting doNotePullSync because device is OFFLINE");
             return false;
         }
 
-        LogUtils.logd(TAG, "Starting doFavoritePullSync sync.");
+        LogUtils.logd(TAG, "Starting doNotePullSync sync.");
 
         NoteApi api = getNoteApi();
         CollectionResponseNote result = api.list().execute();
         List<Note> items = result.getItems();
 
+
+        List<ContentValues> contentValuesList = new ArrayList<ContentValues>();
+        Uri valuesUri = null;
         if (items != null) {
             for (Note note : items) {
                 LogUtils.logd(TAG, note.toPrettyString());
+                NoteContentValues noteContentValues = new NoteContentValues()
+                        .putContent(note.getContent())
+                        .putTitle(note.getTitle())
+                        .putLastUpdate(note.getLastUpdate().getValue())
+                        .putServerId(note.getId())
+                        .putSyncStatus(SyncStatus.SYNCED);
+                valuesUri = noteContentValues.uri();
+                contentValuesList.add(noteContentValues.values());
             }
+        }
+        if (!contentValuesList.isEmpty()) {
+            mContext.getContentResolver().bulkInsert(valuesUri, contentValuesList.toArray(new ContentValues[contentValuesList.size()]));
         }
 
         return true;
     }
 
 
-    private boolean doFavoritePushSync(Context context) throws IOException {
+    private boolean doNotePushSync(Context context) throws IOException {
         if (!isOnline()) {
-            LogUtils.logd(TAG, "Not attempting doFavoritePushSync because device is OFFLINE");
+            LogUtils.logd(TAG, "Not attempting doNotePushSync because device is OFFLINE");
             return false;
         }
 
-        LogUtils.logd(TAG, "Starting doFavoritePushSync sync.");
+        LogUtils.logd(TAG, "Starting doNotePushSync sync.");
 
         boolean modified = false;
+        NoteApi api = getNoteApi();
 
-        if (context != null) {
+        NoteSelection noteSelectionDelete = new NoteSelection().syncStatus(SyncStatus.TO_DELETE);
+        NoteCursor queryDelete = noteSelectionDelete.query(context.getContentResolver());
 
+        queryDelete.moveToPosition(-1);
+        while (queryDelete.moveToNext()) {
+            Long serverId = queryDelete.getServerId();
+            if (serverId !=null) {
+                Void execute = api.remove(serverId).execute();
+                deleteNote(serverId);
+            } else {
+                deleteNoteLocal(queryDelete.getId());
+            }
+            LogUtils.logd(TAG, "ServerSide - Deleted Note " + String.valueOf(serverId));
         }
+        queryDelete.close();
+
+
+
+        NoteSelection noteSelectionUpdate = new NoteSelection().syncStatus(SyncStatus.TO_SYNC);
+        NoteCursor queryUpdate = noteSelectionUpdate.query(context.getContentResolver());
+
+        queryUpdate.moveToPosition(-1);
+        while (queryUpdate.moveToNext()) {
+            Note note = new Note()
+                    .setTitle(queryUpdate.getTitle())
+                    .setContent(queryUpdate.getContent())
+                    .setLastUpdate(new DateTime(queryUpdate.getLastUpdate()));
+
+            Long serverId = queryUpdate.getServerId();
+            if (serverId !=null) {
+                Note execute = api.update(serverId, note).execute();
+                setNoteSynced(serverId);
+                LogUtils.logd(TAG, "ServerSide - Updated Note " + String.valueOf(serverId));
+            } else {
+                Note execute = api.insert(note).execute();
+                serverId = execute.getId();
+                setNoteSyncedLocal(serverId, queryUpdate.getId());
+                LogUtils.logd(TAG, "ServerSide - Inserted Note " + String.valueOf(serverId));
+            }
+        }
+        queryUpdate.close();
 
         return modified;
+    }
+
+    private int setNoteSynced(long serverId) {
+        NoteSelection noteSelection = new NoteSelection().serverId(serverId);
+        NoteContentValues noteContentValues = new NoteContentValues().putSyncStatus(SyncStatus.SYNCED);
+        return noteContentValues.update(mContext.getContentResolver(), noteSelection);
+    }
+
+    private int setNoteSyncedLocal(long serverId, long localId) {
+        NoteSelection noteSelection = new NoteSelection().id(localId);
+        NoteContentValues noteContentValues = new NoteContentValues()
+                .putSyncStatus(SyncStatus.SYNCED)
+                .putServerId(serverId);
+        return noteContentValues.update(mContext.getContentResolver(), noteSelection);
+    }
+
+
+    private void deleteNote(long serverId) {
+        NoteSelection noteSelection = new NoteSelection().serverId(serverId);
+        noteSelection.delete(mContext.getContentResolver());
+    }
+
+    private void deleteNoteLocal(long localId) {
+        NoteSelection noteSelection = new NoteSelection().id(localId);
+        noteSelection.delete(mContext.getContentResolver());
     }
 
     private NoteApi getNoteApi() {

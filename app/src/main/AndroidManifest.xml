@@ -73,7 +73,6 @@
         </activity>
         <activity
             android:name=".activity.NoteDetailActivity"
-            android:label="@string/title_note_detail"
             android:parentActivityName=".activity.NoteListActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

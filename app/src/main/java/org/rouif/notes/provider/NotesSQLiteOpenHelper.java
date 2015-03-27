@@ -30,7 +30,7 @@ public class NotesSQLiteOpenHelper extends SQLiteOpenHelper {
             + NoteColumns.CONTENT + " TEXT, "
             + NoteColumns.LAST_UPDATE + " INTEGER, "
             + NoteColumns.SYNC_STATUS + " INTEGER NOT NULL "
-            + ", CONSTRAINT unique_server_id UNIQUE (server_id) ON CONFLICT REPLACE"
+            + ", CONSTRAINT unique_server_id UNIQUE (" + NoteColumns.SERVER_ID + ") ON CONFLICT REPLACE"
             + " );";
 
     // @formatter:on

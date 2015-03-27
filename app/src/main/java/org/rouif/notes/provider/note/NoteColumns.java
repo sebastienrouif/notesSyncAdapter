@@ -28,7 +28,7 @@ public class NoteColumns implements BaseColumns {
     public static final String SYNC_STATUS = "sync_status";
 
 
-    public static final String DEFAULT_ORDER = TABLE_NAME + "." +_ID;
+    public static final String DEFAULT_ORDER = TABLE_NAME + "." + LAST_UPDATE + " DESC";
 
     // @formatter:off
     public static final String[] ALL_COLUMNS = new String[] {

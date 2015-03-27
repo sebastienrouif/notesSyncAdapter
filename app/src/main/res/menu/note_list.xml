@@ -1,0 +1,13 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity" >
+    <item android:id="@+id/action_new"
+        android:icon="@drawable/ic_note_add_white"
+        android:title="@string/action_new"
+        android:orderInCategory="90"
+        android:showAsAction="ifRoom" />
+    <item android:id="@+id/action_sync"
+        android:title="@string/action_sync"
+        android:orderInCategory="100"
+        android:showAsAction="never" />
+</menu>

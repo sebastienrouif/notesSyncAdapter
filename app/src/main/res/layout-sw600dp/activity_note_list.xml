@@ -11,7 +11,7 @@
     
     -->
 
-    <fragment android:id="@+id/note_list" android:name="org.rouif.notes.activity.NoteListFragment"
+    <fragment android:id="@+id/note_list" android:name="org.rouif.notes.fragment.NoteListFragment"
         android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
         tools:layout="@android:layout/list_content" />
 

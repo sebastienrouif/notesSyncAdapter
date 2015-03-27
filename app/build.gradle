@@ -18,7 +18,7 @@ android {
     def branch = System.getenv("GIT_BRANCH")
 
     defaultConfig {
-        applicationId "org.rouif.note"
+        applicationId "org.rouif.notes"
         minSdkVersion 16
         targetSdkVersion 22
         versionCode 1
@@ -71,7 +71,7 @@ android {
             // installed side-by-side.
             // You will need to substitute the package name for ${applicationId} in
             // AndroidManifest.xml for Content Providers etc.
-            applicationId "org.rouif.note.staging"
+            applicationId "org.rouif.notes.staging"
         }
     }
 

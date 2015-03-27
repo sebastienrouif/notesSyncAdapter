@@ -21,7 +21,7 @@ public class MainActivity extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
+        getMenuInflater().inflate(R.menu.note_list, menu);
         return true;
     }
 
@@ -32,7 +32,7 @@ public class MainActivity extends Activity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         switch (item.getItemId()) {
-            case R.id.action_settings:
+            case R.id.action_sync:
                 SyncUtils.requestManualSync(this);
                 return true;
             default:

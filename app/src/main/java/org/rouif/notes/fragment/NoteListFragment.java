@@ -1,4 +1,4 @@
-package org.rouif.notes.activity;
+package org.rouif.notes.fragment;
 
 import android.app.Activity;
 import android.app.ListFragment;
@@ -7,30 +7,37 @@ import android.content.CursorLoader;
 import android.content.Loader;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import org.rouif.notes.activity.dummy.DummyContent;
+import org.rouif.notes.R;
+import org.rouif.notes.adapter.NoteAdapter;
 import org.rouif.notes.provider.note.NoteColumns;
 import org.rouif.notes.provider.note.NoteSelection;
+import org.rouif.notes.provider.note.SyncStatus;
+import org.rouif.notes.sync.SyncUtils;
 import org.rouif.notes.utils.LogUtils;
 
 
 public class NoteListFragment extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = LogUtils.makeLogTag(NoteListFragment.class);
     private static final String STATE_ACTIVATED_POSITION = "activated_position";
+    private static final int NOTES_LOADER = 100;
     private Callbacks mCallbacks = sDummyCallbacks;
     private int mActivatedPosition = ListView.INVALID_POSITION;
+    private NoteAdapter mNoteAdapter;
 
     public interface Callbacks {
-        public void onItemSelected(String id);
+        public void onItemSelected(Long severId, Long localId);
     }
 
 
     private static Callbacks sDummyCallbacks = new Callbacks() {
         @Override
-        public void onItemSelected(String id) {
+        public void onItemSelected(Long severId, Long localId) {
         }
     };
 
@@ -40,13 +47,7 @@ public class NoteListFragment extends ListFragment implements LoaderManager.Load
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // TODO: replace with a real list adapter.
-        setListAdapter(new ArrayAdapter<DummyContent.DummyItem>(
-                getActivity(),
-                android.R.layout.simple_list_item_activated_1,
-                android.R.id.text1,
-                DummyContent.ITEMS));
+        setHasOptionsMenu(true);
     }
 
     @Override
@@ -58,36 +59,54 @@ public class NoteListFragment extends ListFragment implements LoaderManager.Load
                 && savedInstanceState.containsKey(STATE_ACTIVATED_POSITION)) {
             setActivatedPosition(savedInstanceState.getInt(STATE_ACTIVATED_POSITION));
         }
-        getLoaderManager().restartLoader(1, null, this);
+
+        setEmptyText(getString(R.string.notes_list_empty_place_holder));
+        mNoteAdapter = new NoteAdapter(getActivity(), null, true);
+        setListAdapter(mNoteAdapter);
+        getLoaderManager().restartLoader(NOTES_LOADER, null, this);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.note_list, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_new:
+                mCallbacks.onItemSelected(0L, NoteDetailFragment.NEW_NOTE);
+                return true;
+            case R.id.action_sync:
+                SyncUtils.requestManualSync(getActivity());
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-
-        // Activities containing this fragment must implement its callbacks.
         if (!(activity instanceof Callbacks)) {
             throw new IllegalStateException("Activity must implement fragment's callbacks.");
         }
-
         mCallbacks = (Callbacks) activity;
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-
-        // Reset the active callbacks interface to the dummy implementation.
         mCallbacks = sDummyCallbacks;
     }
 
     @Override
-    public void onListItemClick(ListView listView, View view, int position, long id) {
-        super.onListItemClick(listView, view, position, id);
-
+    public void onListItemClick(ListView listView, View view, int position, long localId) {
+        super.onListItemClick(listView, view, position, localId);
         // Notify the active callbacks interface (the activity, if the
         // fragment is attached to one) that an item has been selected.
-        mCallbacks.onItemSelected(DummyContent.ITEMS.get(position).id);
+        mCallbacks.onItemSelected(0L,localId);
     }
 
     @Override
@@ -123,19 +142,24 @@ public class NoteListFragment extends ListFragment implements LoaderManager.Load
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        LogUtils.logd(TAG, "onCreateLoader");
-        NoteSelection noteSelection = new NoteSelection();
-        String[] projection = NoteColumns.ALL_COLUMNS;
-        return new CursorLoader(getActivity(), noteSelection.uri(), projection,noteSelection.sel() , noteSelection.args(),null);
+        switch (id) {
+            case NOTES_LOADER:
+                NoteSelection noteSelection = new NoteSelection();
+                noteSelection.syncStatus(SyncStatus.SYNCED, SyncStatus.TO_SYNC);
+                String[] projection = NoteColumns.ALL_COLUMNS;
+                return new CursorLoader(getActivity(), noteSelection.uri(), projection, noteSelection.sel(), noteSelection.args(), null);
+            default:
+                return null;
+        }
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        LogUtils.logd(TAG, "onLoadFinished");
+        mNoteAdapter.swapCursor(data);
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-
+        mNoteAdapter.swapCursor(null);
     }
 }
