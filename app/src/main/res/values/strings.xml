@@ -10,5 +10,6 @@
     <string name="notes_list_empty_place_holder">No notes</string>
     <string name="note_detail_title_hint">Title</string>
     <string name="note_detail_content_hint">Content</string>
+    <string name="note_detail_date_update">updated %s</string>
 
 </resources>

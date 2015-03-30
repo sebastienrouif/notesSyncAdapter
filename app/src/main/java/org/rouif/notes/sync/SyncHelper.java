@@ -18,7 +18,6 @@ package org.rouif.notes.sync;
 
 import android.accounts.Account;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.SyncResult;
 import android.net.ConnectivityManager;
@@ -43,7 +42,7 @@ import org.rouif.notes.utils.LogUtils;
 import org.rouif.notes.utils.SharedPreferenceUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -62,6 +61,13 @@ public class SyncHelper {
 
     private Context mContext;
     private NoteApi mNoteApi;
+
+
+    private long numInserts;
+    private long numUpdates;
+    private long numDeletes;
+    private long numEntries;
+
 
     public SyncHelper(Context context) {
         mContext = context;
@@ -167,19 +173,20 @@ public class SyncHelper {
 
         choresDuration = System.currentTimeMillis() - opStart;
 
-        //Find a way to count the number of operations to update the syncResult
-//        int operations = mConferenceDataHandler.getContentProviderOperationsDone();
-        int operations = 0;
         if (syncResult != null && syncResult.stats != null) {
-            syncResult.stats.numEntries += operations;
-            syncResult.stats.numUpdates += operations;
+            syncResult.stats.numEntries += numEntries;
+            syncResult.stats.numUpdates += numUpdates;
+            syncResult.stats.numDeletes += numDeletes;
+            syncResult.stats.numInserts += numInserts;
+
+            LogUtils.logd(TAG, "ACCOUNT SYNC STATS" + "\n" + syncResult.toString());
         }
 
         if (dataChanged) {
             long totalDuration = choresDuration + remoteSyncDuration;
             LogUtils.logd(TAG, "SYNC STATS:\n" +
                     " *  Account synced: " + (account == null ? "null" : account.name) + "\n" +
-                    " *  Content provider operations: " + operations + "\n" +
+                    " *  Content provider operations: " + numEntries + "\n" +
                     " *  Remote sync took: " + remoteSyncDuration + "ms\n" +
                     " *  Post-sync chores took: " + choresDuration + "ms\n" +
                     " *  Total time: " + totalDuration + "ms\n");
@@ -213,9 +220,6 @@ public class SyncHelper {
         CollectionResponseNote result = api.list().execute();
         List<Note> items = result.getItems();
 
-
-        List<ContentValues> contentValuesList = new ArrayList<ContentValues>();
-        Uri valuesUri = null;
         if (items != null) {
             for (Note note : items) {
                 LogUtils.logd(TAG, note.toPrettyString());
@@ -225,12 +229,20 @@ public class SyncHelper {
                         .putLastUpdate(note.getLastUpdate().getValue())
                         .putServerId(note.getId())
                         .putSyncStatus(SyncStatus.SYNCED);
-                valuesUri = noteContentValues.uri();
-                contentValuesList.add(noteContentValues.values());
+                Uri insertUri = noteContentValues.insert(mContext.getContentResolver());
+
+                LogUtils.logd(TAG, "insertUri" + insertUri);
+                if (insertUri != null) {
+                    updateInsertCount(1);
+                } else {
+                    NoteSelection noteSelection = new NoteSelection()
+                            .serverId(note.getId())
+                            .lastUpdateBefore(new Date(note.getLastUpdate().getValue()));
+                    int updateCount = noteContentValues.update(mContext.getContentResolver(), noteSelection);
+                    updateUpdateCount(updateCount);
+                    LogUtils.logd(TAG, "updateCount count" + updateCount);
+                }
             }
-        }
-        if (!contentValuesList.isEmpty()) {
-            mContext.getContentResolver().bulkInsert(valuesUri, contentValuesList.toArray(new ContentValues[contentValuesList.size()]));
         }
 
         return true;
@@ -254,12 +266,15 @@ public class SyncHelper {
         queryDelete.moveToPosition(-1);
         while (queryDelete.moveToNext()) {
             Long serverId = queryDelete.getServerId();
+            int deleteNoteCount = 0;
             if (serverId !=null) {
                 Void execute = api.remove(serverId).execute();
-                deleteNote(serverId);
+                deleteNoteCount = deleteNote(serverId);
+
             } else {
-                deleteNoteLocal(queryDelete.getId());
+                deleteNoteCount = deleteNoteLocal(queryDelete.getId());
             }
+            updateDeleteCount(deleteNoteCount);
             LogUtils.logd(TAG, "ServerSide - Deleted Note " + String.valueOf(serverId));
         }
         queryDelete.close();
@@ -279,17 +294,20 @@ public class SyncHelper {
             Long serverId = queryUpdate.getServerId();
             if (serverId !=null) {
                 Note execute = api.update(serverId, note).execute();
-                setNoteSynced(serverId);
+                int noteSynced = setNoteSynced(serverId);
+                updateUpdateCount(noteSynced);
                 LogUtils.logd(TAG, "ServerSide - Updated Note " + String.valueOf(serverId));
             } else {
                 Note execute = api.insert(note).execute();
                 serverId = execute.getId();
-                setNoteSyncedLocal(serverId, queryUpdate.getId());
+                int noteSyncedLocal = setNoteSyncedLocal(serverId, queryUpdate.getId());
+                updateUpdateCount(noteSyncedLocal);
                 LogUtils.logd(TAG, "ServerSide - Inserted Note " + String.valueOf(serverId));
             }
         }
         queryUpdate.close();
 
+        modified = true;
         return modified;
     }
 
@@ -308,14 +326,14 @@ public class SyncHelper {
     }
 
 
-    private void deleteNote(long serverId) {
+    private int deleteNote(long serverId) {
         NoteSelection noteSelection = new NoteSelection().serverId(serverId);
-        noteSelection.delete(mContext.getContentResolver());
+        return noteSelection.delete(mContext.getContentResolver());
     }
 
-    private void deleteNoteLocal(long localId) {
+    private int deleteNoteLocal(long localId) {
         NoteSelection noteSelection = new NoteSelection().id(localId);
-        noteSelection.delete(mContext.getContentResolver());
+        return noteSelection.delete(mContext.getContentResolver());
     }
 
     private NoteApi getNoteApi() {
@@ -337,6 +355,20 @@ public class SyncHelper {
         return mNoteApi;
     }
 
+    private void updateInsertCount(int executedOperations) {
+        numInserts += executedOperations;
+        numEntries += executedOperations;
+    }
+
+    private void updateUpdateCount(int executedOperations) {
+        numUpdates += executedOperations;
+        numEntries += executedOperations;
+    }
+
+    private void updateDeleteCount(int executedOperations) {
+        numDeletes += executedOperations;
+        numEntries += executedOperations;
+    }
 
     // Returns whether we are connected to the internet.
     private boolean isOnline() {
@@ -356,13 +388,6 @@ public class SyncHelper {
     private static void increaseParseExceptions(SyncResult syncResult) {
         if (syncResult != null && syncResult.stats != null) {
             ++syncResult.stats.numParseExceptions;
-        }
-    }
-
-    private static void increaseSuccesses(SyncResult syncResult) {
-        if (syncResult != null && syncResult.stats != null) {
-            ++syncResult.stats.numEntries;
-            ++syncResult.stats.numUpdates;
         }
     }
 

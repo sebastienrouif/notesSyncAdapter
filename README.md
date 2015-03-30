@@ -25,4 +25,4 @@ Server side
 + [Android SyncAdatper Official Training](http://developer.android.com/training/sync-adapters/index.html)
 
 ## Presentation on SyncAdapter Architecture
-+ [SyncAdapter steps linked to content Provider and Athenticator](http://www.slideshare.net/chalup/sync-on-android)
++ [SyncAdapter steps linked to content Provider and Authenticator](http://www.slideshare.net/chalup/sync-on-android)

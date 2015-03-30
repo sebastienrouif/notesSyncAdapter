@@ -161,7 +161,7 @@ public class NoteDetailFragment extends Fragment implements LoaderManager.Loader
     private void setNoteToView(Note note) {
         if (note != null) {
             mTitleView.setText(note.getTitle());
-            mUpdateView.setText(String.valueOf(note.getId()));
+            mUpdateView.setText(getString(R.string.note_detail_date_update, note.getLastUpdate().toStringRfc3339()));
             mContentView.setText(note.getContent());
         }
     }
@@ -192,8 +192,9 @@ public class NoteDetailFragment extends Fragment implements LoaderManager.Loader
         NoteCursor noteCursor = new NoteCursor(data);
         if (noteCursor.moveToFirst()) {
             Note note = new Note();
+            DateTime lastUpdate = new DateTime(noteCursor.getLastUpdate());
             note.setContent(noteCursor.getContent())
-                    .setLastUpdate(new DateTime(noteCursor.getLastUpdate()))
+                    .setLastUpdate(lastUpdate)
                     .setTitle(noteCursor.getTitle())
                     .setId(noteCursor.getId());
             mNote = note;
